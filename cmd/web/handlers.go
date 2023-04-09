@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"text/template"
 )
 
 //handler function which writes a byte slice containing Hello Team as the response
@@ -14,7 +15,28 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Write([]byte("Hello Team"))
+
+	// Use the template.ParseFiles() function to read the template file into a
+	// template set. If there's an error, we log the detailed error message and use
+	// the http.Error() function to send a generic 500 Internal Server Error
+	// response to the user.
+	ts, err := template.ParseFiles("./ui/html/home.page.tmpl")
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+	// We then use the Execute() method on the template set to write the template
+	// content as the response body. The last parameter to Execute() represents any
+	// dynamic data that we want to pass in, which for now we'll leave as nil.
+
+	err = ts.Execute(w, nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+	}
+
+	// w.Write([]byte("Hello Team"))
 	//log.Fatal()
 }
 
@@ -57,24 +79,4 @@ func createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("Creates a todo"))
-}
-
-// Use the http.NewServeMux() function to initialize a new servemux, then
-// register the home function as the handler for the "/" URL pattern.
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/todo", showTodo)
-	mux.HandleFunc("/todo/create", createTodo)
-
-	// Use the http.ListenAndServe() function to start a new web server. We pass in
-	// two parameters: the TCP network address to listen on (in this case ":4000")
-	// and the servemux we just created. If http.ListenAndServe() returns an error
-	// we use the log.Fatal() function to log the error message and exit. Note
-	// that any error returned by http.ListenAndServe() is always non-nil.
-
-	log.Println("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
-
-	log.Fatal(err)
 }
