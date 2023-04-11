@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -10,9 +9,9 @@ import (
 
 //handler function which writes a byte slice containing Hello Team as the response
 
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 	//initializing slice containing the paths to the two files
@@ -28,8 +27,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// response to the user.
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
+		// app.errorLog.Println(err.Error())
+		// http.Error(w, "Internal Server Error", 500)
 		return
 	}
 	// We then use the Execute() method on the template set to write the template
@@ -38,8 +38,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	err = ts.Execute(w, nil)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		// app.errorLog.Println(err.Error())
+		// http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 	}
 
 	// w.Write([]byte("Hello Team"))
@@ -47,7 +48,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a showTodo handle function
-func showTodo(w http.ResponseWriter, r *http.Request) {
+func (app *application) showTodo(w http.ResponseWriter, r *http.Request) {
 	// Extract the value of the id parameter from the query string and try to
 	// convert it to an integer using the strconv.Atoi() function. If it can't
 	// be converted to an integer, or the value is less than 1, we return a 404 page
@@ -56,7 +57,7 @@ func showTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
@@ -69,7 +70,7 @@ func showTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a createTodo handle function
-func createTodo(w http.ResponseWriter, r *http.Request) {
+func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
@@ -80,7 +81,7 @@ func createTodo(w http.ResponseWriter, r *http.Request) {
 		// Use the http.Error() function to send a 405 status code and "Method Not
 		// Allowed" string as the response body.
 		// w.Header()["Date"] = nilbtw
-		http.Error(w, "Method Not Allowed", 405)
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 
